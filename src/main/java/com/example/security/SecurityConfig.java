@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .password("{noop}admin")  // {noop} برای پسورد بدون انکود کردن (فقط برای تست)
                 .roles("ADMIN")
                 .build();
+        UserDetails admin2 = User.builder().username("admin2").password("{noop}admin").roles("ADMIN").build();
 
         return new InMemoryUserDetailsManager(admin);
     }

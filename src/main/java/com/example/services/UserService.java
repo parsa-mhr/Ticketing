@@ -97,8 +97,10 @@ public class UserService {
     }
 
     public boolean adminlogin(String username, String password) {
-        if ("admin".equals(username) && "admin".equals(password)) {
+        if ("admin".equals(username) || "admin2".equals(username) ) {
+            if ("admin".equals(password))
             return true;
+            else return false;
         }
         return false;
     }
