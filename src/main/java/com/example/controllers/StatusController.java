@@ -3,62 +3,75 @@ package com.example.controllers;
 import com.example.security.JwtUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/status")
 public class StatusController {
 
     private final JwtUtil jwtUtil;
-    private final Set<String> onlineStatus = ConcurrentHashMap.newKeySet();
+    private final Map<String, Long> userLastActiveMap = new ConcurrentHashMap<>();
+    private static final long EXPIRATION_TIME = 100_00; // 1.4 minutes
 
     public StatusController(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
 
+    @Scheduled(fixedRate = 60_000)
+    public void cleanupInactiveUsers() {
+        long currentTime = System.currentTimeMillis();
+        userLastActiveMap.entrySet().removeIf(entry ->
+                (currentTime - entry.getValue()) > EXPIRATION_TIME
+        );
+    }
+
     @PostMapping
     public ResponseEntity<Map<String, Object>> setStatus(@RequestHeader("Authorization") String authHeader) {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                response.put("error", "Invalid Authorization header");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-
-            String token = authHeader.replace("Bearer " , "");  // Remove "Bearer "
-            if (!jwtUtil.validateToken(token)) {
-                response.put("error", "Invalid or expired token");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-
-            String username = jwtUtil.extractUsername(token);
-            onlineStatus.add(username);
-
-            response.put("message", username + " is now online");
-//            response.put("onlineUsersCount", onlineStatus.size());
-//            response.put("onlineUsers", onlineStatus);
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            response.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        String username = validateToken(authHeader);
+        if (username == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid token"));
         }
+
+        userLastActiveMap.put(username, System.currentTimeMillis());
+        return ResponseEntity.ok(Map.of(
+                "message", username + " is online",
+                "onlineUsersCount", userLastActiveMap.size()
+        ));
+    }
+
+    @PostMapping("/heartbeat")
+    public ResponseEntity<Void> heartbeat(@RequestHeader("Authorization") String authHeader) {
+        String username = validateToken(authHeader);
+        if (username != null) {
+            userLastActiveMap.put(username, System.currentTimeMillis());
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getStatus() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("onlineUsersCount", onlineStatus.size());
-        response.put("onlineUsers", new HashSet<>(onlineStatus));  // کپی می‌گیریم که داده‌ها بعد از clear از بین نره
-        return ResponseEntity.ok(response);
+        long currentTime = System.currentTimeMillis();
+        Set<String> activeUsers = userLastActiveMap.entrySet().stream()
+                .filter(entry -> (currentTime - entry.getValue()) <= EXPIRATION_TIME)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        return ResponseEntity.ok(Map.of(
+                "onlineUsersCount", activeUsers.size(),
+                "onlineUsers", activeUsers
+        ));
     }
 
+    private String validateToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7);
+        return jwtUtil.validateToken(token) ? jwtUtil.extractUsername(token) : null;
+    }
 }

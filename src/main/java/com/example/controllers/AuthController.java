@@ -43,7 +43,7 @@ public class AuthController {
         try {
            if (userService.adminlogin(username , password))
                return ResponseEntity.ok().body(Map.of("token" , jwtUtil.generateToken(username) ,
-                    "username" , username   ));
+                    "username" , username ));
            else
                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }catch (Exception e){
