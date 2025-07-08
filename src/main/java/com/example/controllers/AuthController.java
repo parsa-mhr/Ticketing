@@ -42,7 +42,8 @@ public class AuthController {
         String password = Body.get("password");
         try {
            if (userService.adminlogin(username , password))
-               return ResponseEntity.ok().body(jwtUtil.generateToken(username));
+               return ResponseEntity.ok().body(Map.of("token" , jwtUtil.generateToken(username) ,
+                    "username" , username   ));
            else
                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }catch (Exception e){
@@ -52,12 +53,13 @@ public class AuthController {
     @PostMapping ("/homescreen")
     public ResponseEntity<?> mainpage(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
+        String username = null;
         if (jwtUtil.validateToken(token)){
 //            User user = userRepository.findByEmail(jwtUtil.extractEmail(token)).orElseThrow();
 //            int coins = userService.logincoinhandling(user);
 //            long remain =  user.getRemainsSub();
 
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(jwtUtil.extractUsername(token));
         }else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

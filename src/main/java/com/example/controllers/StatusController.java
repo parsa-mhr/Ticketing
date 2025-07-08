@@ -32,7 +32,7 @@ public class StatusController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
 
-            String token = authHeader.substring(7);  // Remove "Bearer "
+            String token = authHeader.replace("Bearer " , "");  // Remove "Bearer "
             if (!jwtUtil.validateToken(token)) {
                 response.put("error", "Invalid or expired token");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
@@ -58,7 +58,6 @@ public class StatusController {
         Map<String, Object> response = new HashMap<>();
         response.put("onlineUsersCount", onlineStatus.size());
         response.put("onlineUsers", new HashSet<>(onlineStatus));  // کپی می‌گیریم که داده‌ها بعد از clear از بین نره
-        onlineStatus.clear();  // خالی کردن مجموعه
         return ResponseEntity.ok(response);
     }
 
