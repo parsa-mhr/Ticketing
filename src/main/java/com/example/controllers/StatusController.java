@@ -15,7 +15,7 @@ public class StatusController {
 
     private final JwtUtil jwtUtil;
     private final Map<String, Long> userLastActiveMap = new ConcurrentHashMap<>();
-    private static final long EXPIRATION_TIME = 100_00; // 1.4 minutes
+    private static final long EXPIRATION_TIME = 300_000; // 1.4 minutes
 
     public StatusController(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
