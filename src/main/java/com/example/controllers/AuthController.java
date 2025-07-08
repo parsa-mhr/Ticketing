@@ -9,10 +9,7 @@ import com.example.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -52,5 +49,19 @@ public class AuthController {
          return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
+    @PostMapping ("/homescreen")
+    public ResponseEntity<?> mainpage(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        if (jwtUtil.validateToken(token)){
+//            User user = userRepository.findByEmail(jwtUtil.extractEmail(token)).orElseThrow();
+//            int coins = userService.logincoinhandling(user);
+//            long remain =  user.getRemainsSub();
+
+            return ResponseEntity.ok().build();
+        }else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
+
 
 }
