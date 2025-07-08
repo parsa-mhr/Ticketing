@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
@@ -37,12 +38,12 @@ public class StatusController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
 
-            String email = jwtUtil.extractUsername(token);
-            onlineStatus.add(email);
+            String username = jwtUtil.extractUsername(token);
+            onlineStatus.add(username);
 
-            response.put("message", email + " is now online");
-            response.put("onlineUsersCount", onlineStatus.size());
-            response.put("onlineUsers", onlineStatus);
+            response.put("message", username + " is now online");
+//            response.put("onlineUsersCount", onlineStatus.size());
+//            response.put("onlineUsers", onlineStatus);
 
             return ResponseEntity.ok(response);
 
@@ -56,8 +57,9 @@ public class StatusController {
     public ResponseEntity<Map<String, Object>> getStatus() {
         Map<String, Object> response = new HashMap<>();
         response.put("onlineUsersCount", onlineStatus.size());
-        response.put("onlineUsers", onlineStatus);
-        onlineStatus.clear();
+        response.put("onlineUsers", new HashSet<>(onlineStatus));  // کپی می‌گیریم که داده‌ها بعد از clear از بین نره
+        onlineStatus.clear();  // خالی کردن مجموعه
         return ResponseEntity.ok(response);
     }
+
 }
